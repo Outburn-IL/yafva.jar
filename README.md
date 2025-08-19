@@ -63,6 +63,7 @@ Validate a bath Bundle and recieve the results as a Bundle of OperationOutcomes.
 
 - [Linux Installation](./docs/INSTALL-linux.md)
 - [Windows Installation](./docs/INSTALL-windows.md)
+- [Kubernetes Installation](./docs/INSTALL-kubernetes.md)
 - [Configuration Reference](./docs/CONFIGURATION.md)
 
 ---
