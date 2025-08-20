@@ -9,7 +9,6 @@ This guide explains how to deploy the **YAFVA.JAR** validator in a Kubernetes cl
 - A running Kubernetes cluster (v1.22+ recommended)  
 - `kubectl` configured to access the cluster  
 - Access to pull the container image `outburnltd/yafva.jar:latest`  
-- A StorageClass available for PVCs (adjust `storageClassName` as needed)  
 - Optional: image pull secrets if the registry is private  
 
 ---
@@ -25,7 +24,6 @@ Apply the manifest:
 This will create:
 
 - **ConfigMap** – holds the `application.yaml` configuration  
-- **PersistentVolumeClaim (PVC)** – provides storage for the validator cache  
 - **Deployment** – runs the validator pods  
 - **Service** – exposes the validator inside the cluster  
 
@@ -84,18 +82,6 @@ data:
       tx-log:
       locale: en
       remove-text: true
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: fhir-cache-pvc
-spec:
-  accessModes:
-    - ReadWriteOnce   # Or ReadWriteMany if multi-pod sharing is needed
-  resources:
-    requests:
-      storage: 12Gi
-  storageClassName: gp3-encrypted # Adjust to your cluster's StorageClass
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -163,9 +149,6 @@ spec:
           mountPath: /app/application.yaml
           subPath: application.yaml
       volumes:
-      - name: fhir-cache
-        persistentVolumeClaim:
-          claimName: fhir-cache-pvc
       - name: config-volume
         configMap:
           name: yafva-jar-config
@@ -189,20 +172,6 @@ spec:
     protocol: TCP
   type: ClusterIP
 ```
-
----
-
-## Persistent Storage
-
-The deployment uses a **PersistentVolumeClaim (PVC)** named `fhir-cache-pvc` to store the validator’s **FHIR package cache**.  
-
-- The current request is set to **12 GiB** of storage.  
-- This cache may **grow over time** as more packages are downloaded and validated.  
-
-🔎 **Recommendation:**  
-- Monitor the PVC usage regularly to avoid running out of space.  
-- For production setups, consider initially allocating a **larger size** (e.g., 20–50 GiB) depending on expected workloads.  
-- If storage fills up, the validator will fail to download additional packages.
 
 ---
 
