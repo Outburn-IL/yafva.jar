@@ -1,3 +1,22 @@
+# YAFVA.JAR Installation Manual – Kubernetes
+
+This guide explains how to deploy the **YAFVA.JAR** validator in a Kubernetes cluster using a single YAML manifest.
+
+---
+
+## Prerequisites
+
+- A running Kubernetes cluster (v1.22+ recommended)
+- `kubectl` configured to access the cluster
+- Access to pull the container image `outburnltd/yafva.jar:latest`
+
+---
+
+## Full Manifest
+
+Save the following as `yafva-all.yaml`:
+
+```yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -135,3 +154,79 @@ spec:
     targetPort: 8080
     protocol: TCP
   type: ClusterIP
+```
+---
+
+## Deployment
+
+Apply the manifest:
+
+```sh
+  kubectl apply -f yafva-all.yaml
+```
+
+This will create:
+
+- **ConfigMap** – holds the `application.yaml` configuration
+- **Deployment** – runs the validator pods
+- **Service** – exposes the validator inside the cluster
+
+---
+
+## Verification
+
+Check pod status:
+
+```sh
+  kubectl get pods -l app=yafva-jar
+```
+
+Check logs:
+
+```sh
+  kubectl logs -l app=yafva-jar -f
+```
+
+Verify readiness:
+
+```sh
+  kubectl run test --rm -it --image=curlimages/curl -- curl http://yafva-jar-service:8080/info | jq .
+```
+
+---
+
+## Probes
+
+The deployment defines two health probes:
+
+- **Liveness Probe** – checks `/actuator/health/liveness` every 30 seconds.
+- **Readiness Probe** – checks `/actuator/health/readiness`.
+
+⚠️ **Note on readiness delay:**  
+The initial readiness delay is set to **400 seconds**. This value is intentionally high to ensure the validator has enough time to **download and cache required FHIR packages** during the very first startup.
+
+Subsequent restarts of the pods (where the cache already exists on the persistent volume) will usually be much faster. In such cases, you may safely lower the `initialDelaySeconds` to around **150 seconds** for a better balance between availability and startup speed.
+
+---
+
+## Scaling
+
+Increase replicas:
+
+```sh
+  kubectl scale deployment yafva-jar --replicas=4
+```
+
+---
+
+## Cleanup
+
+Remove all resources:
+
+```sh
+  kubectl delete -f yafva-all.yaml
+```
+
+---
+
+✅ With this single manifest you get a **fully functional YAFVA.JAR validator** in Kubernetes: config, persistent cache, probes, scaling, and service exposure.
