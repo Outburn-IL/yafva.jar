@@ -121,7 +121,7 @@ public class FhirValidationController {
             if ("outcome".equals(format)) {
                 // Determine response content type based on request content type
                 MediaType responseContentType;
-                if (contentType != null && (contentType.contains("xml") || contentType.contains("XML"))) {
+                if (FhirValidator.isXmlFormat(contentType)) {
                     responseContentType = MediaType.parseMediaType(CONTENT_TYPE_APPLICATION_FHIR_XML_UTF8);
                 } else {
                     responseContentType = MediaType.parseMediaType(CONTENT_TYPE_APPLICATION_FHIR_JSON_UTF8);
@@ -189,7 +189,7 @@ public class FhirValidationController {
             var result = FhirValidator.validateBundle(bytes, contentType, configuration);
             // Determine response content type based on request content type
             MediaType responseContentType;
-            if (contentType != null && (contentType.contains("xml") || contentType.contains("XML"))) {
+            if (FhirValidator.isXmlFormat(contentType)) {
                 responseContentType = MediaType.parseMediaType(CONTENT_TYPE_APPLICATION_FHIR_XML_UTF8);
             } else {
                 responseContentType = MediaType.parseMediaType(CONTENT_TYPE_APPLICATION_FHIR_JSON_UTF8);

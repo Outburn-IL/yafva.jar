@@ -20,8 +20,8 @@ import java.util.Set;
 @Slf4j
 public class FhirValidator {
 
-    private static boolean isXmlFormat(String contentType) {
-        return contentType != null && (contentType.contains("xml") || contentType.contains("XML"));
+    public static boolean isXmlFormat(String contentType) {
+        return contentType != null && contentType.toLowerCase().contains("xml");
     }
 
     private static Manager.FhirFormat detectFormat(String contentType) {
@@ -80,9 +80,8 @@ public class FhirValidator {
         // Engine
         var validationEngine = FhirValidationEngineCache.getValidationEngine();
 
-        // Create output parser
-        var outputParser = new org.hl7.fhir.r5.formats.XmlParser();
-        outputParser.setOutputStyle(org.hl7.fhir.r5.formats.IParser.OutputStyle.NORMAL);
+        // Create output parser using the helper method
+        var outputParser = (org.hl7.fhir.r5.formats.XmlParser) createParser(true);
 
         // Result
         var responseBundle = new org.hl7.fhir.r5.model.Bundle();
