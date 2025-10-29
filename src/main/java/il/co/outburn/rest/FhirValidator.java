@@ -39,6 +39,12 @@ public class FhirValidator {
         return parser;
     }
 
+    // Original method for backward compatibility - defaults to JSON format
+    public static FhirValidationResult validateBundle(byte[] requestBundle, FhirValidatorConfiguration configuration) throws IOException {
+        return validateBundle(requestBundle, "application/fhir+json", configuration);
+    }
+
+    // Overloaded method with contentType parameter for XML/JSON support
     public static FhirValidationResult validateBundle(byte[] requestBundle, String contentType, FhirValidatorConfiguration configuration) throws IOException {
         if (!isFhirVersionSupported(configuration)) {
             throw new UnsupportedOperationException("Unsupported FHIR version: " + configuration.getSv());
@@ -172,6 +178,12 @@ public class FhirValidator {
         return result;
     }
 
+    // Original method for backward compatibility - defaults to JSON format
+    public static FhirValidationResult validateBytes(byte[] resourceBytes, List<String> profileList, FhirValidatorConfiguration configuration) throws Throwable {
+        return validateBytes(resourceBytes, profileList, "application/fhir+json", configuration);
+    }
+
+    // Overloaded method with contentType parameter for XML/JSON support
     public static FhirValidationResult validateBytes(byte[] resourceBytes, List<String> profileList, String contentType, FhirValidatorConfiguration configuration) throws Throwable {
         long start = System.currentTimeMillis();
 

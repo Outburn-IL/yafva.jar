@@ -727,4 +727,50 @@ class FhirValidatorApplicationTests {
         assertNotNull(result.resourceBytes);
         assertTrue(result.resourceBytes.length > 0);
     }
+
+    // Backward compatibility tests - original API without contentType parameter
+    @Test
+    void validateBytes_backwardCompatibility_shouldDefaultToJson() throws Throwable {
+        String patientJson = """
+            { "resourceType": "Patient", "gender": "male" }
+        """;
+        byte[] patientBytes = patientJson.getBytes();
+        // Call original method without contentType parameter
+        FhirValidationResult result = assertDoesNotThrow(() ->
+            FhirValidator.validateBytes(patientBytes, profiles, configuration)
+        );
+        assertNotNull(result);
+        assertNotNull(result.resourceBytes);
+        assertTrue(result.resourceBytes.length > 0);
+        // Verify the result is JSON
+        String resultStr = new String(result.resourceBytes);
+        assertTrue(resultStr.contains("{") || resultStr.contains("\"resourceType\""));
+    }
+
+    @Test
+    void validateBundle_backwardCompatibility_shouldDefaultToJson() throws Exception {
+        String bundleStr = """
+            {
+                "resourceType": "Bundle",
+                "type": "batch",
+                "entry": [
+                    {
+                        "request": { "method": "POST", "url": "Patient" },
+                        "resource": { "resourceType": "Patient", "gender": "male" }
+                    }
+                ]
+            }
+        """;
+        byte[] bundleBytes = bundleStr.getBytes();
+        // Call original method without contentType parameter
+        FhirValidationResult result = assertDoesNotThrow(() ->
+            FhirValidator.validateBundle(bundleBytes, configuration)
+        );
+        assertNotNull(result);
+        assertNotNull(result.resourceBytes);
+        assertTrue(result.resourceBytes.length > 0);
+        // Verify the result is JSON
+        String resultStr = new String(result.resourceBytes);
+        assertTrue(resultStr.contains("{") || resultStr.contains("\"resourceType\""));
+    }
 }
