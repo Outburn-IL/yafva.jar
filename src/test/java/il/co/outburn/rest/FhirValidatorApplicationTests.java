@@ -20,11 +20,11 @@ class FhirValidatorApplicationTests {
     @Autowired
     FhirValidatorConfiguration configuration;
 
-    // validateBytes tests
+    // validateBytes tests - JSON format
     @Test
     void validateBytes_nullInput_shouldReturnErrorOutcome() throws Throwable {
         FhirValidationResult result = assertDoesNotThrow(() ->
-            FhirValidator.validateBytes(null, profiles, configuration)
+            FhirValidator.validateBytes(null, profiles, "application/fhir+json", configuration)
         );
         assertNotNull(result);
         OperationOutcome outcome = (OperationOutcome)FhirUtil.bytesToResource(result.resourceBytes, configuration);
@@ -35,7 +35,7 @@ class FhirValidatorApplicationTests {
     void validateBytes_emptyJson_shouldReturnErrorOutcome() throws Throwable {
         byte[] emptyJson = "{}".getBytes();
         FhirValidationResult result = assertDoesNotThrow(() ->
-            FhirValidator.validateBytes(emptyJson, profiles, configuration)
+            FhirValidator.validateBytes(emptyJson, profiles, "application/fhir+json", configuration)
         );
         assertNotNull(result);
         OperationOutcome outcome = (OperationOutcome)FhirUtil.bytesToResource(result.resourceBytes, configuration);
@@ -49,7 +49,7 @@ class FhirValidatorApplicationTests {
         """;
         byte[] patientBytes = patientStr.getBytes();
         FhirValidationResult result = assertDoesNotThrow(() ->
-            FhirValidator.validateBytes(patientBytes, profiles, configuration)
+            FhirValidator.validateBytes(patientBytes, profiles, "application/fhir+json", configuration)
         );
         assertNotNull(result);
         OperationOutcome outcome = (OperationOutcome)FhirUtil.bytesToResource(result.resourceBytes, configuration);
@@ -66,7 +66,7 @@ class FhirValidatorApplicationTests {
         """;
         byte[] bundleBytes = bundleStr.getBytes();
         FhirValidationResult result = assertDoesNotThrow(() ->
-            FhirValidator.validateBytes(bundleBytes, profiles, configuration)
+            FhirValidator.validateBytes(bundleBytes, profiles, "application/fhir+json", configuration)
         );
         assertNotNull(result);
         OperationOutcome outcome = (OperationOutcome)FhirUtil.bytesToResource(result.resourceBytes, configuration);
@@ -83,7 +83,7 @@ class FhirValidatorApplicationTests {
         """;
         byte[] bundleBytes = bundleStr.getBytes();
         FhirValidationResult result = assertDoesNotThrow(() ->
-            FhirValidator.validateBytes(bundleBytes, profiles, configuration)
+            FhirValidator.validateBytes(bundleBytes, profiles, "application/fhir+json", configuration)
         );
         assertNotNull(result);
         OperationOutcome outcome = (OperationOutcome)FhirUtil.bytesToResource(result.resourceBytes, configuration);
@@ -101,7 +101,7 @@ class FhirValidatorApplicationTests {
                 """;
         byte[] patientBytes = patientStr.getBytes();
         FhirValidationResult result =  assertDoesNotThrow(() ->
-            FhirValidator.validateBytes(patientBytes, profiles, configuration)
+            FhirValidator.validateBytes(patientBytes, profiles, "application/fhir+json", configuration)
         );
         assertNotNull(result);
         assertNotNull(result.resourceBytes);
@@ -131,7 +131,7 @@ class FhirValidatorApplicationTests {
         """;
         byte[] patientBytes = patientStr.getBytes();
         FhirValidationResult result = assertDoesNotThrow(() ->
-            FhirValidator.validateBytes(patientBytes, ilCoreProfiles, configuration)
+            FhirValidator.validateBytes(patientBytes, ilCoreProfiles, "application/fhir+json", configuration)
         );
         assertNotNull(result);
         OperationOutcome outcome = (OperationOutcome)FhirUtil.bytesToResource(result.resourceBytes, configuration);
@@ -158,18 +158,18 @@ class FhirValidatorApplicationTests {
         """;
         byte[] patientBytes = patientStr.getBytes();
         FhirValidationResult result = assertDoesNotThrow(() ->
-            FhirValidator.validateBytes(patientBytes, ilCoreProfiles, configuration)
+            FhirValidator.validateBytes(patientBytes, ilCoreProfiles, "application/fhir+json", configuration)
         );
         assertNotNull(result);
         OperationOutcome outcome = (OperationOutcome)FhirUtil.bytesToResource(result.resourceBytes, configuration);
         assertTrue(FhirUtil.operationOutcomeHasErrorIssue(outcome));
     }
 
-    // validateBundle tests
+    // validateBundle tests - JSON format
     @Test
     void validateBundle_nullInput_shouldThrowException() {
         assertThrows(Exception.class, () ->
-            FhirValidator.validateBundle((byte[])null, configuration)
+            FhirValidator.validateBundle((byte[])null, "application/fhir+json", configuration)
         );
     }
 
@@ -177,7 +177,7 @@ class FhirValidatorApplicationTests {
     void validateBundle_emptyJson_shouldThrowException() throws Exception {
         byte[] emptyJson = "{}".getBytes();
         assertThrows(Exception.class, () ->
-            FhirValidator.validateBundle(emptyJson, configuration)
+            FhirValidator.validateBundle(emptyJson, "application/fhir+json", configuration)
         );
     }
 
@@ -190,7 +190,7 @@ class FhirValidatorApplicationTests {
             ] }
         """;
         byte[] bundleBytes = bundleStr.getBytes();
-        FhirValidationResult result = FhirValidator.validateBundle(bundleBytes, configuration);
+        FhirValidationResult result = FhirValidator.validateBundle(bundleBytes, "application/fhir+json", configuration);
         assertNotNull(result);
         Bundle bundle = (Bundle)FhirUtil.bytesToResource(result.resourceBytes, configuration);
         assertEquals(1, bundle.getEntry().size());
@@ -204,7 +204,7 @@ class FhirValidatorApplicationTests {
             { "resourceType": "Bundle", "type": "batch" }
         """;
         byte[] bundleBytes = bundleStr.getBytes();
-        FhirValidationResult result = FhirValidator.validateBundle(bundleBytes, configuration);
+        FhirValidationResult result = FhirValidator.validateBundle(bundleBytes, "application/fhir+json", configuration);
         assertNotNull(result);
         Bundle bundle = (Bundle)FhirUtil.bytesToResource(result.resourceBytes, configuration);
         assertNotNull(bundle);
@@ -217,7 +217,7 @@ class FhirValidatorApplicationTests {
             { "resourceType": "Bundle", "type": "batch", "entry": [] }
         """;
         byte[] bundleBytes = bundleStr.getBytes();
-        FhirValidationResult result = FhirValidator.validateBundle(bundleBytes, configuration);
+        FhirValidationResult result = FhirValidator.validateBundle(bundleBytes, "application/fhir+json", configuration);
         assertNotNull(result);
         Bundle bundle = (Bundle)FhirUtil.bytesToResource(result.resourceBytes, configuration);
         assertNotNull(bundle);
@@ -233,7 +233,7 @@ class FhirValidatorApplicationTests {
         """;
         byte[] bundleBytes = bundleStr.getBytes();
         assertThrows(Exception.class, () ->
-            FhirValidator.validateBundle(bundleBytes, configuration)
+            FhirValidator.validateBundle(bundleBytes, "application/fhir+json", configuration)
         );
     }
 
@@ -258,7 +258,7 @@ class FhirValidatorApplicationTests {
                 """;
         byte[] bundleBytes = bundleStr.getBytes();
         FhirValidationResult result = assertDoesNotThrow(() ->
-            FhirValidator.validateBundle(bundleBytes, configuration)
+            FhirValidator.validateBundle(bundleBytes, "application/fhir+json", configuration)
         );
         assertNotNull(result);
         assertNotNull(result.resourceBytes);
@@ -290,7 +290,7 @@ class FhirValidatorApplicationTests {
                 """;
         byte[] bundleBytes = bundleStr.getBytes();
         FhirValidationResult result = assertDoesNotThrow(() ->
-            FhirValidator.validateBundle(bundleBytes, configuration)
+            FhirValidator.validateBundle(bundleBytes, "application/fhir+json", configuration)
         );
         assertNotNull(result);
         assertNotNull(result.resourceBytes);
@@ -329,7 +329,7 @@ class FhirValidatorApplicationTests {
         """;
         byte[] bundleBytes = bundleStr.getBytes();
         FhirValidationResult result = assertDoesNotThrow(() ->
-            FhirValidator.validateBundle(bundleBytes, configuration)
+            FhirValidator.validateBundle(bundleBytes, "application/fhir+json", configuration)
         );
         assertNotNull(result);
         Bundle bundle = (Bundle)FhirUtil.bytesToResource(result.resourceBytes, configuration);
@@ -366,7 +366,7 @@ class FhirValidatorApplicationTests {
         """;
         byte[] bundleBytes = bundleStr.getBytes();
         FhirValidationResult result = assertDoesNotThrow(() ->
-            FhirValidator.validateBundle(bundleBytes, configuration)
+            FhirValidator.validateBundle(bundleBytes, "application/fhir+json", configuration)
         );
         assertNotNull(result);
         Bundle bundle = (Bundle)FhirUtil.bytesToResource(result.resourceBytes, configuration);
@@ -396,7 +396,7 @@ class FhirValidatorApplicationTests {
         """;
         byte[] bundleBytes = bundleStr.getBytes();
         FhirValidationResult result = assertDoesNotThrow(() ->
-            FhirValidator.validateBundle(bundleBytes, configuration)
+            FhirValidator.validateBundle(bundleBytes, "application/fhir+json", configuration)
         );
         assertNotNull(result);
         Bundle bundle = (Bundle)FhirUtil.bytesToResource(result.resourceBytes, configuration);
@@ -422,7 +422,7 @@ class FhirValidatorApplicationTests {
         """;
         byte[] bundleBytes = bundleStr.getBytes();
         Exception exception = assertThrows(Exception.class, () ->
-            FhirValidator.validateBundle(bundleBytes, configuration)
+            FhirValidator.validateBundle(bundleBytes, "application/fhir+json", configuration)
         );
         assertTrue(exception.getMessage().contains("Bundle.entry[1].resource must be a JSON object"));
     }
@@ -454,9 +454,277 @@ class FhirValidatorApplicationTests {
         """;
         byte[] bundleBytes = bundleStr.getBytes();
         Exception exception = assertThrows(Exception.class, () ->
-            FhirValidator.validateBundle(bundleBytes, configuration)
+            FhirValidator.validateBundle(bundleBytes, "application/fhir+json", configuration)
         );
         assertNotNull(exception);
         assertTrue(exception.getMessage().contains("Bundle.entry[3].fullUrl must be unique"));
+    }
+
+    // XML format tests for validateBytes
+    @Test
+    void validateBytes_xmlValidPatient_shouldSuccess() throws Throwable {
+        String patientXml = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <Patient xmlns="http://hl7.org/fhir">
+                <id value="xml-patient-1"/>
+                <gender value="male"/>
+            </Patient>
+        """;
+        byte[] patientBytes = patientXml.getBytes();
+        FhirValidationResult result = assertDoesNotThrow(() ->
+            FhirValidator.validateBytes(patientBytes, profiles, "application/fhir+xml", configuration)
+        );
+        assertNotNull(result);
+        assertNotNull(result.resourceBytes);
+        assertTrue(result.resourceBytes.length > 0);
+        // Verify the result is XML
+        String resultStr = new String(result.resourceBytes);
+        assertTrue(resultStr.contains("<?xml") || resultStr.contains("<OperationOutcome"));
+    }
+
+    @Test
+    void validateBytes_xmlInvalidPatient_shouldReturnErrorOutcome() throws Throwable {
+        String patientXml = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <Patient xmlns="http://hl7.org/fhir">
+                <gender value="invalid-gender"/>
+            </Patient>
+        """;
+        byte[] patientBytes = patientXml.getBytes();
+        FhirValidationResult result = assertDoesNotThrow(() ->
+            FhirValidator.validateBytes(patientBytes, profiles, "application/fhir+xml", configuration)
+        );
+        assertNotNull(result);
+        assertNotNull(result.resourceBytes);
+        assertTrue(result.resourceBytes.length > 0);
+        // Verify the result is XML
+        String resultStr = new String(result.resourceBytes);
+        assertTrue(resultStr.contains("<?xml") || resultStr.contains("<OperationOutcome"));
+    }
+
+    @Test
+    void validateBytes_xmlValidObservation_shouldSuccess() throws Throwable {
+        String observationXml = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <Observation xmlns="http://hl7.org/fhir">
+                <id value="xml-obs-1"/>
+                <status value="final"/>
+                <code>
+                    <coding>
+                        <system value="http://loinc.org"/>
+                        <code value="15074-8"/>
+                    </coding>
+                </code>
+            </Observation>
+        """;
+        byte[] observationBytes = observationXml.getBytes();
+        FhirValidationResult result = assertDoesNotThrow(() ->
+            FhirValidator.validateBytes(observationBytes, profiles, "application/fhir+xml", configuration)
+        );
+        assertNotNull(result);
+        assertNotNull(result.resourceBytes);
+        assertTrue(result.resourceBytes.length > 0);
+        String resultStr = new String(result.resourceBytes);
+        assertTrue(resultStr.contains("<?xml") || resultStr.contains("<OperationOutcome"));
+    }
+
+    @Test
+    void validateBytes_xmlCaseInsensitiveContentType_shouldSuccess() throws Throwable {
+        String patientXml = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <Patient xmlns="http://hl7.org/fhir">
+                <id value="xml-patient-2"/>
+                <gender value="female"/>
+            </Patient>
+        """;
+        byte[] patientBytes = patientXml.getBytes();
+        // Test with uppercase XML in content type
+        FhirValidationResult result = assertDoesNotThrow(() ->
+            FhirValidator.validateBytes(patientBytes, profiles, "application/fhir+XML", configuration)
+        );
+        assertNotNull(result);
+        assertNotNull(result.resourceBytes);
+        assertTrue(result.resourceBytes.length > 0);
+    }
+
+    // XML format tests for validateBundle
+    @Test
+    void validateBundle_xmlBatchBundleWithValidPatient_shouldSuccess() throws Exception {
+        String bundleXml = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <Bundle xmlns="http://hl7.org/fhir">
+                <id value="xml-bundle-1"/>
+                <type value="batch"/>
+                <entry>
+                    <fullUrl value="urn:uuid:xml-entry-1"/>
+                    <resource>
+                        <Patient>
+                            <gender value="male"/>
+                        </Patient>
+                    </resource>
+                    <request>
+                        <method value="POST"/>
+                        <url value="Patient"/>
+                    </request>
+                </entry>
+            </Bundle>
+        """;
+        byte[] bundleBytes = bundleXml.getBytes();
+        FhirValidationResult result = assertDoesNotThrow(() ->
+            FhirValidator.validateBundle(bundleBytes, "application/fhir+xml", configuration)
+        );
+        assertNotNull(result);
+        assertNotNull(result.resourceBytes);
+        assertTrue(result.resourceBytes.length > 0);
+        // Verify the result is XML
+        String resultStr = new String(result.resourceBytes);
+        assertTrue(resultStr.contains("<?xml") || resultStr.contains("<Bundle"));
+    }
+
+    @Test
+    void validateBundle_xmlBatchBundleWithInvalidPatient_shouldReturnErrorOutcome() throws Exception {
+        String bundleXml = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <Bundle xmlns="http://hl7.org/fhir">
+                <type value="batch"/>
+                <entry>
+                    <resource>
+                        <Patient>
+                            <gender value="invalid-gender"/>
+                        </Patient>
+                    </resource>
+                    <request>
+                        <method value="POST"/>
+                        <url value="Patient"/>
+                    </request>
+                </entry>
+            </Bundle>
+        """;
+        byte[] bundleBytes = bundleXml.getBytes();
+        FhirValidationResult result = assertDoesNotThrow(() ->
+            FhirValidator.validateBundle(bundleBytes, "application/fhir+xml", configuration)
+        );
+        assertNotNull(result);
+        assertNotNull(result.resourceBytes);
+        assertTrue(result.resourceBytes.length > 0);
+        // Verify the result is XML
+        String resultStr = new String(result.resourceBytes);
+        assertTrue(resultStr.contains("<?xml") || resultStr.contains("<Bundle"));
+    }
+
+    @Test
+    void validateBundle_xmlBatchBundleWithMultipleEntries_shouldSuccess() throws Exception {
+        String bundleXml = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <Bundle xmlns="http://hl7.org/fhir">
+                <type value="batch"/>
+                <entry>
+                    <fullUrl value="urn:uuid:xml-patient-1"/>
+                    <resource>
+                        <Patient>
+                            <gender value="male"/>
+                        </Patient>
+                    </resource>
+                    <request>
+                        <method value="POST"/>
+                        <url value="Patient"/>
+                    </request>
+                </entry>
+                <entry>
+                    <fullUrl value="urn:uuid:xml-patient-2"/>
+                    <resource>
+                        <Patient>
+                            <gender value="female"/>
+                        </Patient>
+                    </resource>
+                    <request>
+                        <method value="POST"/>
+                        <url value="Patient"/>
+                    </request>
+                </entry>
+            </Bundle>
+        """;
+        byte[] bundleBytes = bundleXml.getBytes();
+        FhirValidationResult result = assertDoesNotThrow(() ->
+            FhirValidator.validateBundle(bundleBytes, "application/fhir+xml", configuration)
+        );
+        assertNotNull(result);
+        assertNotNull(result.resourceBytes);
+        assertTrue(result.resourceBytes.length > 0);
+        // Verify the result is XML
+        String resultStr = new String(result.resourceBytes);
+        assertTrue(resultStr.contains("<?xml") || resultStr.contains("<Bundle"));
+    }
+
+    @Test
+    void validateBundle_xmlBatchBundleWrongType_shouldThrowException() throws Exception {
+        String bundleXml = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <Bundle xmlns="http://hl7.org/fhir">
+                <type value="transaction"/>
+                <entry>
+                    <resource>
+                        <Patient>
+                            <gender value="male"/>
+                        </Patient>
+                    </resource>
+                </entry>
+            </Bundle>
+        """;
+        byte[] bundleBytes = bundleXml.getBytes();
+        Exception exception = assertThrows(Exception.class, () ->
+            FhirValidator.validateBundle(bundleBytes, "application/fhir+xml", configuration)
+        );
+        assertNotNull(exception);
+        assertTrue(exception.getMessage().contains("BATCH"));
+    }
+
+    @Test
+    void validateBundle_xmlEmptyBundle_shouldReturnEmptyBundle() throws Exception {
+        String bundleXml = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <Bundle xmlns="http://hl7.org/fhir">
+                <type value="batch"/>
+            </Bundle>
+        """;
+        byte[] bundleBytes = bundleXml.getBytes();
+        FhirValidationResult result = assertDoesNotThrow(() ->
+            FhirValidator.validateBundle(bundleBytes, "application/fhir+xml", configuration)
+        );
+        assertNotNull(result);
+        assertNotNull(result.resourceBytes);
+        assertTrue(result.resourceBytes.length > 0);
+        // Verify the result is XML
+        String resultStr = new String(result.resourceBytes);
+        assertTrue(resultStr.contains("<?xml") || resultStr.contains("<Bundle"));
+    }
+
+    // Mixed format detection tests
+    @Test
+    void validateBytes_jsonContentTypeWithJsonData_shouldSuccess() throws Throwable {
+        String patientJson = """
+            { "resourceType": "Patient", "gender": "male" }
+        """;
+        byte[] patientBytes = patientJson.getBytes();
+        FhirValidationResult result = assertDoesNotThrow(() ->
+            FhirValidator.validateBytes(patientBytes, profiles, "application/json", configuration)
+        );
+        assertNotNull(result);
+        assertNotNull(result.resourceBytes);
+        assertTrue(result.resourceBytes.length > 0);
+    }
+
+    @Test
+    void validateBytes_nullContentType_shouldDefaultToJson() throws Throwable {
+        String patientJson = """
+            { "resourceType": "Patient", "gender": "male" }
+        """;
+        byte[] patientBytes = patientJson.getBytes();
+        FhirValidationResult result = assertDoesNotThrow(() ->
+            FhirValidator.validateBytes(patientBytes, profiles, null, configuration)
+        );
+        assertNotNull(result);
+        assertNotNull(result.resourceBytes);
+        assertTrue(result.resourceBytes.length > 0);
     }
 }
