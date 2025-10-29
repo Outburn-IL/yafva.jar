@@ -33,6 +33,8 @@ import lombok.extern.slf4j.Slf4j;
 public class FhirValidationController {
     private static final String CONTENT_TYPE_APPLICATION_FHIR_JSON = "application/fhir+json";
     private static final String CONTENT_TYPE_APPLICATION_FHIR_JSON_UTF8 = "application/fhir+json;charset=UTF-8";
+    private static final String CONTENT_TYPE_APPLICATION_FHIR_XML = "application/fhir+xml";
+    private static final String CONTENT_TYPE_APPLICATION_FHIR_XML_UTF8 = "application/fhir+xml;charset=UTF-8";
 
     FhirValidationController() {
         log.info("FhirValidationController constructor called");
@@ -69,14 +71,21 @@ public class FhirValidationController {
     @Operation(
             summary = "Validates a FHIR resource",
             requestBody = @RequestBody(
-                description = "A FHIR resource to validate, in JSON format",
-                content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(type = "object")),
+                description = "A FHIR resource to validate, in JSON or XML format",
+                content = {
+                    @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(type = "object")),
+                    @Content(mediaType = CONTENT_TYPE_APPLICATION_FHIR_JSON, schema = @Schema(type = "object")),
+                    @Content(mediaType = CONTENT_TYPE_APPLICATION_FHIR_XML, schema = @Schema(type = "string"))
+                },
                 required = true),
                 responses = {
                     @ApiResponse(
                         responseCode = "200",
                         description = "Success",
-                        content = @Content(mediaType = CONTENT_TYPE_APPLICATION_FHIR_JSON_UTF8, schema = @Schema(type = "object"))),
+                        content = {
+                            @Content(mediaType = CONTENT_TYPE_APPLICATION_FHIR_JSON_UTF8, schema = @Schema(type = "object")),
+                            @Content(mediaType = CONTENT_TYPE_APPLICATION_FHIR_XML_UTF8, schema = @Schema(type = "string"))
+                        }),
                     @ApiResponse(
                         responseCode = "500",
                         description = "Internal Server Error",
@@ -93,8 +102,8 @@ public class FhirValidationController {
             schema = @Schema(type = "string"), description = "Optional. Response format. Specify 'list' to return a list of messages, or specify 'outcome' to return validation results as an instance of FHIR OperationOutcome resource. Default value is 'outcome'.")
     @PostMapping(
             value = "/validate",
-            consumes = {MediaType.APPLICATION_JSON_VALUE, "text/json", CONTENT_TYPE_APPLICATION_FHIR_JSON},
-            produces = {MediaType.APPLICATION_JSON_VALUE, CONTENT_TYPE_APPLICATION_FHIR_JSON, MediaType.APPLICATION_PROBLEM_JSON_VALUE})
+            consumes = {MediaType.APPLICATION_JSON_VALUE, "text/json", CONTENT_TYPE_APPLICATION_FHIR_JSON, MediaType.APPLICATION_XML_VALUE, "text/xml", CONTENT_TYPE_APPLICATION_FHIR_XML},
+            produces = {MediaType.APPLICATION_JSON_VALUE, CONTENT_TYPE_APPLICATION_FHIR_JSON, CONTENT_TYPE_APPLICATION_FHIR_XML, MediaType.APPLICATION_PROBLEM_JSON_VALUE})
     public ResponseEntity<?> validateRequest(
             HttpServletRequest request,
             @RequestParam(value = "profile", required = false) List<String> profiles,
@@ -107,11 +116,19 @@ public class FhirValidationController {
             log.info("FhirValidationController::validate called");
             var body = request.getInputStream();
             var bytes = body.readAllBytes();
-            var result = FhirValidator.validateBytes(bytes, profiles, configuration);
+            var contentType = request.getContentType();
+            var result = FhirValidator.validateBytes(bytes, profiles, contentType, configuration);
             if ("outcome".equals(format)) {
+                // Determine response content type based on request content type
+                MediaType responseContentType;
+                if (contentType != null && (contentType.contains("xml") || contentType.contains("XML"))) {
+                    responseContentType = MediaType.parseMediaType(CONTENT_TYPE_APPLICATION_FHIR_XML_UTF8);
+                } else {
+                    responseContentType = MediaType.parseMediaType(CONTENT_TYPE_APPLICATION_FHIR_JSON_UTF8);
+                }
                 return ResponseEntity
                         .ok()
-                        .contentType(MediaType.parseMediaType(CONTENT_TYPE_APPLICATION_FHIR_JSON_UTF8))
+                        .contentType(responseContentType)
                         .body(result.resourceBytes);
             } else {
                 var response = new FhirValidatorResponse();
@@ -141,31 +158,45 @@ public class FhirValidationController {
     @Operation(
             summary = "Performs validation of the input FHIR Bundle in batch mode and returns a response FHIR Bundle that contains OperationOutcome for each resource",
             requestBody = @RequestBody(
-                description = "A FHIR bundle to validate, in JSON format",
-                content = @Content(mediaType = CONTENT_TYPE_APPLICATION_FHIR_JSON, schema = @Schema(type = "object")),
+                description = "A FHIR bundle to validate, in JSON or XML format",
+                content = {
+                    @Content(mediaType = CONTENT_TYPE_APPLICATION_FHIR_JSON, schema = @Schema(type = "object")),
+                    @Content(mediaType = CONTENT_TYPE_APPLICATION_FHIR_XML, schema = @Schema(type = "string"))
+                },
                 required = true),
                 responses = {
                     @ApiResponse(
                         responseCode = "200",
                         description = "Success. Returned value is a FHIR Bundle of type collection.",
-                        content = @Content(mediaType = CONTENT_TYPE_APPLICATION_FHIR_JSON_UTF8, schema = @Schema(type = "object"))),
+                        content = {
+                            @Content(mediaType = CONTENT_TYPE_APPLICATION_FHIR_JSON_UTF8, schema = @Schema(type = "object")),
+                            @Content(mediaType = CONTENT_TYPE_APPLICATION_FHIR_XML_UTF8, schema = @Schema(type = "string"))
+                        }),
                     @ApiResponse(
                         responseCode = "500",
                         description = "Internal Server Error",
                         content = @Content(schema = @Schema(implementation = ProblemDetail.class)))})
     @PostMapping(
             value = "/validateBundle",
-            consumes = {MediaType.APPLICATION_JSON_VALUE, "text/json", CONTENT_TYPE_APPLICATION_FHIR_JSON},
-            produces = {CONTENT_TYPE_APPLICATION_FHIR_JSON, MediaType.APPLICATION_PROBLEM_JSON_VALUE})
+            consumes = {MediaType.APPLICATION_JSON_VALUE, "text/json", CONTENT_TYPE_APPLICATION_FHIR_JSON, MediaType.APPLICATION_XML_VALUE, "text/xml", CONTENT_TYPE_APPLICATION_FHIR_XML},
+            produces = {CONTENT_TYPE_APPLICATION_FHIR_JSON, CONTENT_TYPE_APPLICATION_FHIR_XML, MediaType.APPLICATION_PROBLEM_JSON_VALUE})
     public ResponseEntity<?> validateBundle(HttpServletRequest request) throws Throwable {
         try {
             log.info("FhirValidationController::validateBundle called");
             var body = request.getInputStream();
             var bytes = body.readAllBytes();
-            var result = FhirValidator.validateBundle(bytes, configuration);
+            var contentType = request.getContentType();
+            var result = FhirValidator.validateBundle(bytes, contentType, configuration);
+            // Determine response content type based on request content type
+            MediaType responseContentType;
+            if (contentType != null && (contentType.contains("xml") || contentType.contains("XML"))) {
+                responseContentType = MediaType.parseMediaType(CONTENT_TYPE_APPLICATION_FHIR_XML_UTF8);
+            } else {
+                responseContentType = MediaType.parseMediaType(CONTENT_TYPE_APPLICATION_FHIR_JSON_UTF8);
+            }
             return ResponseEntity
                     .ok()
-                    .contentType(MediaType.parseMediaType(CONTENT_TYPE_APPLICATION_FHIR_JSON_UTF8))
+                    .contentType(responseContentType)
                     .body(result.resourceBytes);
 
         } catch (IllegalArgumentException ex) {
