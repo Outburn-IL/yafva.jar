@@ -8,6 +8,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.hl7.fhir.r5.elementmodel.Manager;
 import org.hl7.fhir.r5.formats.IParser;
 import org.hl7.fhir.r5.formats.JsonParser;
+import org.hl7.fhir.r5.formats.XmlParser;
 import org.hl7.fhir.utilities.validation.ValidationMessage;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -19,15 +20,110 @@ import java.util.Set;
 @Slf4j
 public class FhirValidator {
 
+    public static boolean isXmlFormat(String contentType) {
+        return contentType != null && contentType.toLowerCase().contains("xml");
+    }
+
+    private static Manager.FhirFormat detectFormat(String contentType) {
+        return isXmlFormat(contentType) ? Manager.FhirFormat.XML : Manager.FhirFormat.JSON;
+    }
+
+    private static IParser createParser(boolean isXml) {
+        IParser parser;
+        if (isXml) {
+            parser = new XmlParser();
+        } else {
+            parser = new JsonParser();
+        }
+        parser.setOutputStyle(IParser.OutputStyle.NORMAL);
+        return parser;
+    }
+
+    // Original method for backward compatibility - defaults to JSON format
     public static FhirValidationResult validateBundle(byte[] requestBundle, FhirValidatorConfiguration configuration) throws IOException {
+        return validateBundle(requestBundle, "application/fhir+json", configuration);
+    }
+
+    // Overloaded method with contentType parameter for XML/JSON support
+    public static FhirValidationResult validateBundle(byte[] requestBundle, String contentType, FhirValidatorConfiguration configuration) throws IOException {
         if (!isFhirVersionSupported(configuration)) {
             throw new UnsupportedOperationException("Unsupported FHIR version: " + configuration.getSv());
         }
         
-        var gson = new Gson();
-        var jsonStr = new String(requestBundle, StandardCharsets.UTF_8);
-        var json = gson.fromJson(jsonStr, JsonObject.class);
-        return validateBundle(json, configuration);
+        boolean isXml = isXmlFormat(contentType);
+        Manager.FhirFormat format = detectFormat(contentType);
+        
+        if (isXml) {
+            // For XML bundles, parse and validate differently
+            return validateBundleXml(requestBundle, configuration);
+        } else {
+            // For JSON bundles, use the existing logic
+            var gson = new Gson();
+            var jsonStr = new String(requestBundle, StandardCharsets.UTF_8);
+            var json = gson.fromJson(jsonStr, JsonObject.class);
+            return validateBundle(json, configuration);
+        }
+    }
+
+    private static FhirValidationResult validateBundleXml(byte[] requestBundle, FhirValidatorConfiguration configuration) throws IOException {
+        // Checks
+        if (!isFhirVersionSupported(configuration)) {
+            throw new UnsupportedOperationException("Unsupported FHIR version: " + configuration.getSv());
+        }
+
+        // Parse XML bundle
+        var xmlParser = new org.hl7.fhir.r5.formats.XmlParser();
+        var bundle = (org.hl7.fhir.r5.model.Bundle) xmlParser.parse(requestBundle);
+        
+        // Validate bundle structure
+        if (!"Bundle".equals(bundle.getResourceType().name())) {
+            throw new IllegalArgumentException("Resource type must be Bundle");
+        }
+        if (bundle.getType() != org.hl7.fhir.r5.model.Bundle.BundleType.BATCH) {
+            throw new IllegalArgumentException("Bundle type must be of type BATCH");
+        }
+        
+        // Engine
+        var validationEngine = FhirValidationEngineCache.getValidationEngine();
+
+        // Create output parser using the helper method
+        var outputParser = (org.hl7.fhir.r5.formats.XmlParser) createParser(true);
+
+        // Result
+        var responseBundle = new org.hl7.fhir.r5.model.Bundle();
+        responseBundle.setType(org.hl7.fhir.r5.model.Bundle.BundleType.COLLECTION);
+
+        // Validates every entry individually
+        for (var entry : bundle.getEntry()) {
+            if (!entry.hasResource()) {
+                throw new IllegalArgumentException("Bundle entry must have a resource");
+            }
+            
+            var resourceBytes = outputParser.composeBytes(entry.getResource());
+            org.hl7.fhir.r5.model.OperationOutcome ooR5;
+            var messages = new ArrayList<ValidationMessage>();
+            try {
+                ooR5 = validationEngine.validate(resourceBytes, Manager.FhirFormat.XML, new ArrayList<String>(), messages);
+            }
+            catch (org.hl7.fhir.r5.utils.EOperationOutcome e) {
+                ooR5 = e.getOutcome();
+            }
+
+            if (configuration.getRemoveText() != null && configuration.getRemoveText()) {
+                ooR5.setText(null);
+            }
+
+            var responseEntry = responseBundle.addEntry();
+            if (entry.hasFullUrl()) {
+                responseEntry.setFullUrl(entry.getFullUrl());
+            }
+            responseEntry.setResponse(new org.hl7.fhir.r5.model.Bundle.BundleEntryResponseComponent());
+            responseEntry.getResponse().setOutcome(ooR5);
+        }
+
+        var result = new FhirValidationResult();
+        result.resourceBytes = outputParser.composeBytes(responseBundle);
+        return result;
     }
 
     public static FhirValidationResult validateBundle(JsonObject requestBundle, FhirValidatorConfiguration configuration)
@@ -82,7 +178,13 @@ public class FhirValidator {
         return result;
     }
 
+    // Original method for backward compatibility - defaults to JSON format
     public static FhirValidationResult validateBytes(byte[] resourceBytes, List<String> profileList, FhirValidatorConfiguration configuration) throws Throwable {
+        return validateBytes(resourceBytes, profileList, "application/fhir+json", configuration);
+    }
+
+    // Overloaded method with contentType parameter for XML/JSON support
+    public static FhirValidationResult validateBytes(byte[] resourceBytes, List<String> profileList, String contentType, FhirValidatorConfiguration configuration) throws Throwable {
         long start = System.currentTimeMillis();
 
         // Sanitizing the list of profiles
@@ -97,16 +199,19 @@ public class FhirValidator {
 
         var validationEngine = FhirValidationEngineCache.getValidationEngine();
         var validationResult = new FhirValidationResult();
-        var fhirJsonParser = createFhirJsonParser();
+        var format = detectFormat(contentType);
+        var isXml = isXmlFormat(contentType);
+        var parser = createParser(isXml);
+        
         try {
             var messages = new ArrayList<ValidationMessage>();
-            var operationOutcome = validationEngine.validate(resourceBytes, Manager.FhirFormat.JSON, internalProfileList, messages);
+            var operationOutcome = validationEngine.validate(resourceBytes, format, internalProfileList, messages);
             if (configuration.getRemoveText() != null && configuration.getRemoveText()) {
                 operationOutcome.setText(null);
             }
 
             validationResult.messages = messages;
-            validationResult.resourceBytes = fhirJsonParser.composeBytes(operationOutcome);
+            validationResult.resourceBytes = parser.composeBytes(operationOutcome);
             long finish = System.currentTimeMillis();
             long timeElapsed = finish - start;
             log.info("FhirValidator::validateBytes - OK ({} bytes for {} ms)", resourceBytes.length, timeElapsed);
@@ -122,7 +227,7 @@ public class FhirValidator {
             message.setType(ValidationMessage.IssueType.EXCEPTION);
             message.setLevel(ValidationMessage.IssueSeverity.FATAL);
             message.setLocation(stackTrace);
-            validationResult.resourceBytes = fhirJsonParser.composeBytes(operationOutcome2);
+            validationResult.resourceBytes = parser.composeBytes(operationOutcome2);
             validationResult.messages.add(message);
         }
         return validationResult;
