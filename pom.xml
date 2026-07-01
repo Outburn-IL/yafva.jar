@@ -32,7 +32,7 @@
 			https://maven.pkg.github.com/Outburn-IL/org.hl7.fhir.core.
 			See ../hapifhir-validator/SYNC.md for the fork-bump procedure.
 		-->
-		<hapi.fhir.version>6.9.8-yafva.2</hapi.fhir.version>
+		<hapi.fhir.version>6.9.11-yafva.1</hapi.fhir.version>
 		<java.version>21</java.version>
 		<maven.compiler.target>21</maven.compiler.target>
 		<maven.compiler.source>21</maven.compiler.source>

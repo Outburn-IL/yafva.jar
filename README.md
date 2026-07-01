@@ -76,6 +76,11 @@ The HL7 FHIR validator dependency comes from the
 GitHub auth, so Maven needs a token with `read:packages` scope before it can
 resolve `ca.uhn.hapi.fhir:org.hl7.fhir.validation`.
 
+For local builds, that means a PAT is required unless the dependency is already
+present in your local Maven cache. Building in GitHub Actions is different: the
+workflow's `GITHUB_TOKEN` can read the package because it runs inside the same
+organization with `packages: read` permission.
+
 One-time setup (PowerShell, using the `gh` CLI):
 
 ```powershell
@@ -84,6 +89,13 @@ gh auth refresh -h github.com -s read:packages
 
 # 2. Make sure ~/.m2/settings.xml has a <server id="github-yafva"> entry
 #    referencing ${env.GITHUB_PACKAGES_TOKEN} (see project docs).
+
+# Example:
+# <server>
+#   <id>github-yafva</id>
+#   <username>YOUR_GITHUB_USERNAME</username>
+#   <password>${env.GITHUB_PACKAGES_TOKEN}</password>
+# </server>
 
 # 3. Per-shell: expose the token to Maven
 $env:GITHUB_PACKAGES_TOKEN = gh auth token
