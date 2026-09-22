@@ -159,12 +159,14 @@ Ensure you've downloaded NSSM and placed `nssm.exe` in the `bin\` folder. See th
 
 ### Custom Java Options
 
-To add JVM arguments (memory settings, system properties, etc.):
+JVM arguments (memory settings, proxy, system properties) are passed through the `JAVA_TOOL_OPTIONS` environment variable. See [JVM Options](./CONFIGURATION.md#jvm-options).
+
+Before installing, set `JAVA_TOOL_OPTIONS` at the top of `install-service.bat`. To change it on an installed service:
 
 1. Open Command Prompt as administrator
-2. Use NSSM to set Java options:
+2. Update the service environment:
 ```cmd
-bin\nssm.exe set yafvajar AppParameters "-Xms512m" "-Xmx2g" "-jar" "C:\yafva\yafva.jar"
+bin\nssm.exe set yafvajar AppEnvironmentExtra "JAVA_TOOL_OPTIONS=-Xms512m -Xmx2g -Dhttps.proxyHost=proxy -Dhttps.proxyPort=8080"
 ```
 3. Restart the service
 

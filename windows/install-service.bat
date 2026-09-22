@@ -29,6 +29,9 @@ set "SERVICE_NAME=yafvajar"
 set "SERVICE_DISPLAY=YafvaJar - FHIR Validator"
 set "SERVICE_DESC=YafvaJar - FHIR Validator"
 
+REM Optional JVM options (memory, proxy, ...). Example: -Xmx2g -Dhttps.proxyHost=proxy -Dhttps.proxyPort=8080
+set "JAVA_TOOL_OPTIONS="
+
 echo ========================================
 echo YAFVA.JAR Service Installation
 echo ========================================
@@ -95,6 +98,9 @@ REM Configure service display name and description
 
 REM Set working directory
 "%NSSM_EXE%" set "%SERVICE_NAME%" AppDirectory "%INSTALL_DIR%" >nul
+
+REM Pass JVM options via JAVA_TOOL_OPTIONS
+if defined JAVA_TOOL_OPTIONS "%NSSM_EXE%" set "%SERVICE_NAME%" AppEnvironmentExtra "JAVA_TOOL_OPTIONS=%JAVA_TOOL_OPTIONS%" >nul
 
 REM Configure startup type (automatic)
 "%NSSM_EXE%" set "%SERVICE_NAME%" Start SERVICE_AUTO_START >nul

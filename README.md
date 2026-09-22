@@ -31,7 +31,8 @@ validator:
   tx-server:
 ```
 
-For detailed information about all available configuration options, see the [Configuration Reference](./docs/CONFIGURATION.md).
+For detailed information about all available configuration options, see the [Configuration Reference](./docs/CONFIGURATION.md).  
+JVM options (memory, proxy) are set via `JAVA_TOOL_OPTIONS` in all deployment modes, see [JVM Options](./docs/CONFIGURATION.md#jvm-options).
 
 ### ⚙️ Recommended server.tomcat.threads configuration
 As a baseline it is recommended to start with:  

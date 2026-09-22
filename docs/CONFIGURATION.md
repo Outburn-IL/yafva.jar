@@ -296,6 +296,64 @@ java -jar yafva.jar \
   --validator.ig[0]=hl7.fhir.us.core#6.1.0
 ```
 
+## JVM Options
+
+JVM options (memory, proxy, system properties) are passed through the `JAVA_TOOL_OPTIONS` environment variable in all deployment modes. The JVM reads it on startup, so no wrapper script or launcher changes are needed.
+
+| Mode | Where to set it |
+|------|-----------------|
+| Linux (systemd) | `export JAVA_TOOL_OPTIONS=...` in `yafvajar.sh` |
+| Windows (NSSM) | `JAVA_TOOL_OPTIONS` in `install-service.bat`, or `nssm set yafvajar AppEnvironmentExtra JAVA_TOOL_OPTIONS=...` |
+| Docker Compose | `environment` in `docker-compose.yml` |
+| Kubernetes | `env` in the Deployment |
+
+Example:
+```bash
+JAVA_TOOL_OPTIONS="-Xms512m -Xmx2g"
+```
+
+> **Note:** The Docker image ships with a default `JAVA_TOOL_OPTIONS` (`-XX:MaxRAMPercentage=75.0` and friends). Setting the variable replaces that default.
+
+### Proxy Configuration
+
+Proxy settings are JVM system properties, not `application.yaml` options. Outbound HTTP calls (package downloads, terminology server) honor them automatically.
+
+| Property | Description |
+|----------|-------------|
+| `http.proxyHost` / `http.proxyPort` | Proxy for HTTP requests |
+| `https.proxyHost` / `https.proxyPort` | Proxy for HTTPS requests |
+| `http.nonProxyHosts` | Hosts to bypass, separated by `\|`, wildcards allowed (applies to HTTPS too) |
+
+Via `JAVA_TOOL_OPTIONS` (all deployment modes):
+```bash
+JAVA_TOOL_OPTIONS="-Dhttp.proxyHost=proxy.example.com -Dhttp.proxyPort=8080 -Dhttps.proxyHost=proxy.example.com -Dhttps.proxyPort=8080 -Dhttp.nonProxyHosts=localhost|127.*|*.internal"
+```
+
+Direct `java -jar`:
+```bash
+java \
+  -Dhttp.proxyHost=proxy.example.com \
+  -Dhttp.proxyPort=8080 \
+  -Dhttps.proxyHost=proxy.example.com \
+  -Dhttps.proxyPort=8080 \
+  -Dhttp.nonProxyHosts="localhost|127.*|*.internal" \
+  -jar yafva.jar
+```
+
+Kubernetes:
+```yaml
+env:
+  - name: JAVA_TOOL_OPTIONS
+    value: >-
+      -Xmx2g
+      -Xms512m
+      -Dhttp.proxyHost=proxy.example.com
+      -Dhttp.proxyPort=8080
+      -Dhttps.proxyHost=proxy.example.com
+      -Dhttps.proxyPort=8080
+      -Dhttp.nonProxyHosts=localhost|127.*|*.internal
+```
+
 ## Performance Tuning Recommendations
 
 ### Thread Configuration
@@ -304,9 +362,9 @@ java -jar yafva.jar \
 - Example: For a 12-core machine, use min-spare: 9, max: 15
 
 ### Memory Settings
-Use JVM options to control memory usage:
+Set heap limits through `JAVA_TOOL_OPTIONS` (see [JVM Options](#jvm-options)):
 ```bash
-java -Xms512m -Xmx2g -jar yafva.jar
+JAVA_TOOL_OPTIONS="-Xms512m -Xmx2g"
 ```
 
 ### Validation Level
