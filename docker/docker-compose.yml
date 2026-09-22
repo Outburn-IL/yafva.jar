@@ -11,7 +11,7 @@ services:
       - ./fhir:/home/yafva/.fhir
       - ./application.yaml:/app/application.yaml
     environment:
-      - JAVA_OPTS=-Xmx2g -Xms512m
+      - JAVA_TOOL_OPTIONS=-Xmx2g -Xms512m
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
       interval: 30s

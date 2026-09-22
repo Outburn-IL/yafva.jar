@@ -98,7 +98,7 @@ spec:
         - containerPort: 8080
           protocol: TCP
         env:
-        - name: JAVA_OPTS
+        - name: JAVA_TOOL_OPTIONS
           value: "-Xmx2g -Xms512m"
         resources:
           requests:

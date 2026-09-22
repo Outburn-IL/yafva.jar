@@ -121,12 +121,15 @@ Paste the following:
 JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
 
 WORKDIR=/opt/yafvajar/
-JAVA_OPTIONS=  # example: "-Xms256m -Xmx512m"
-APP_OPTIONS=   # example: "--spring.config.location=application.yaml"
+JAVA_TOOL_OPTIONS=  # example: "-Xms256m -Xmx512m -Dhttps.proxyHost=proxy -Dhttps.proxyPort=8080"
+APP_OPTIONS=        # example: "--spring.config.location=application.yaml"
 
 cd $WORKDIR
-"${JAVA_HOME}/bin/java" $JAVA_OPTIONS -jar yafva.jar $APP_OPTIONS
+[ -n "$JAVA_TOOL_OPTIONS" ] && export JAVA_TOOL_OPTIONS
+"${JAVA_HOME}/bin/java" -jar yafva.jar $APP_OPTIONS
 ```
+
+> **Note:** JVM options (memory, proxy) go in `JAVA_TOOL_OPTIONS`. See [JVM Options](./CONFIGURATION.md#jvm-options).
 
 ---
 

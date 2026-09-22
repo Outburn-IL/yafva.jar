@@ -83,7 +83,7 @@ Configuration can be customized through:
 3. Volume-mounted configuration files
 
 ### Key Environment Variables
-- `JAVA_OPTS` - JVM options (default: `-Xmx2g -Xms512m`)
+- `JAVA_TOOL_OPTIONS` - JVM options (memory, proxy, ...), e.g. `-Xmx2g -Xms512m -Dhttps.proxyHost=proxy -Dhttps.proxyPort=8080`. See [JVM Options](../docs/CONFIGURATION.md#jvm-options).
 
 ## Security Features
 
