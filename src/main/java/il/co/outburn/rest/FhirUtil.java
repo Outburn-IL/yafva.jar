@@ -25,11 +25,21 @@ public class FhirUtil {
     @Getter
     private static final org.hl7.fhir.r5.formats.JsonParser parserR5;
 
+    @Getter
+    private static final org.hl7.fhir.r4.formats.XmlParser xmlParserR4;
+
+    @Getter
+    private static final org.hl7.fhir.r5.formats.XmlParser xmlParserR5;
+
     static {
         parserR4 = new JsonParser();
         parserR4.setOutputStyle(IParser.OutputStyle.NORMAL);
         parserR5 = new org.hl7.fhir.r5.formats.JsonParser();
         parserR5.setOutputStyle(org.hl7.fhir.r5.formats.IParser.OutputStyle.NORMAL);
+        xmlParserR4 = new org.hl7.fhir.r4.formats.XmlParser();
+        xmlParserR4.setOutputStyle(IParser.OutputStyle.NORMAL);
+        xmlParserR5 = new org.hl7.fhir.r5.formats.XmlParser();
+        xmlParserR5.setOutputStyle(org.hl7.fhir.r5.formats.IParser.OutputStyle.NORMAL);
     }
 
     private static List<ValidationMessage> filterMessages(List<ValidationMessage> messages) {
